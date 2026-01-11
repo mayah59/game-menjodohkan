@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Game Edukasi Menjodohkan Media Sosial</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #ffecd2, #fcb69f);
+      text-align: center;
+      padding: 20px;
+    }
+    h1 { color: #333; }
+    .status {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    .game-container {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .column {
+      background: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      width: 260px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    }
+    .item {
+      padding: 12px;
+      margin: 10px 0;
+      background: #e3f2fd;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .item:hover { transform: scale(1.05); }
+    .selected { outline: 3px solid #2196f3; }
+    .correct { background: #b9f6ca !important; }
+    .wrong { background: #ff8a80 !important; animation: shake 0.3s; }
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+    #message { margin-top: 15px; font-size: 18px; font-weight: bold; }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      background: #ffca28;
+      cursor: pointer;
+    }
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      top: -10px;
+      animation: fall 2s linear infinite;
+    }
+    @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<h1>🎮 Menjodohkan Media Sosial</h1>
+<p>Cocokkan platform dengan fungsi yang benar</p>
+
+<div class="status">
+  <div>⏱️ Waktu: <span id="time">60</span></div>
+  <div>⭐ Skor: <span id="score">0</span></div>
+</div>
+
+<div class="game-container">
+  <div class="column" id="leftColumn"><h3>Platform</h3></div>
+  <div class="column" id="rightColumn"><h3>Fungsi</h3></div>
+</div>
+
+<div id="message"></div>
+<button onclick="resetGame()">🔁 Ulangi Permainan</button>
+
+<audio id="soundCorrect" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+<audio id="soundWrong" src="https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg"></audio>
+
+<script>
+const pairs = [
+  { key:'forum', left:'💬 Kaskus', right:'Forum Diskusi' },
+  { key:'blog', left:'✍️ Blog', right:'WordPress' },
+  { key:'foto', left:'📸 Foto Sharing', right:'Google Foto' },
+  { key:'video', left:'🎵🎥 Video Sharing', right:'TikTok & YouTube' },
+  { key:'bookmark', left:'📌 Social Bookmarking', right:'Pinterest' },
+  { key:'gaming', left:'🎮 Social Gaming', right:'Roblox' }
+];
+
+function shuffle(arr){ return arr.sort(() => Math.random()-0.5); }
+
+let selectedLeft = null;
+let score = 0;
+let matched = 0;
+let time = 60;
+
+const leftCol = document.getElementById('leftColumn');
+const rightCol = document.getElementById('rightColumn');
+const msg = document.getElementById('message');
+const scoreEl = document.getElementById('score');
+const timeEl = document.getElementById('time');
+
+shuffle([...pairs]).forEach(p => {
+  const d = document.createElement('div');
+  d.className = 'item';
+  d.textContent = p.left;
+  d.dataset.key = p.key;
+  leftCol.appendChild(d);
+});
+
+shuffle([...pairs]).forEach(p => {
+  const d = document.createElement('div');
+  d.className = 'item';
+  d.textContent = p.right;
+  d.dataset.key = p.key;
+  rightCol.appendChild(d);
+});
+
+leftCol.addEventListener('click', e => {
+  if(!e.target.classList.contains('item')) return;
+  document.querySelectorAll('#leftColumn .item').forEach(i=>i.classList.remove('selected'));
+  selectedLeft = e.target;
+  selectedLeft.classList.add('selected');
+});
+
+rightCol.addEventListener('click', e => {
+  if(!e.target.classList.contains('item') || !selectedLeft) return;
+  const soundC = document.getElementById('soundCorrect');
+  const soundW = document.getElementById('soundWrong');
+  if(e.target.dataset.key === selectedLeft.dataset.key){
+    e.target.classList.add('correct');
+    selectedLeft.classList.add('correct');
+    e.target.style.pointerEvents='none';
+    selectedLeft.style.pointerEvents='none';
+    soundC.play();
+    score += 10; matched++;
+    scoreEl.textContent = score;
+    msg.textContent = '✔️ Cocok!';
+    selectedLeft = null;
+    if(matched === pairs.length){
+      clearInterval(timer);
+      msg.innerHTML = `🎉 Semua pasangan berhasil!<br>⭐ Skor Akhir: ${score}<br>⏱️ Sisa Waktu: ${time} detik`;
+      confetti();
+    }
+  } else {
+    e.target.classList.add('wrong');
+    selectedLeft.classList.add('wrong');
+    soundW.play();
+    msg.textContent='❌ Tidak cocok';
+    setTimeout(()=>{
+      e.target.classList.remove('wrong');
+      selectedLeft.classList.remove('wrong');
+    },400);
+  }
+});
+
+const timer = setInterval(()=>{
+  time--; timeEl.textContent=time;
+  if(time<=0){
+    clearInterval(timer);
+    msg.innerHTML = `⏱️ Waktu habis!<br>⭐ Skor Akhir: ${score}`;
+  }
+},1000);
+
+function confetti(){
+  for(let i=0;i<40;i++){
+    const c=document.createElement('div');
+    c.className='confetti';
+    c.style.left=Math.random()*100+'vw';
+    c.style.background=`hsl(${Math.random()*360},100%,50%)`;
+    c.style.animationDuration=(Math.random()*2+1)+'s';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),2000);
+  }
+}
+function resetGame(){ location.reload(); }
+</script>
+</body>
+</html>
